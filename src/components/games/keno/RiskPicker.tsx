@@ -18,7 +18,7 @@ const RiskPicker = ({ }: RPProps) => {
     return <RP >
         <div className="risk_title">Risk:</div>
         <div className="risk_content">
-            <div className="risk_value" onClick={() => { setShow(!show) }}>
+            <div className={show ? "risk_value risk_value2" : "risk_value"} onClick={() => { setShow(!show) }}>
                 <span>{risk[isPicked]}</span>
                 <img src={arr} alt="X" className={show ? "down" : ""} />
             </div>
@@ -68,6 +68,10 @@ const RP = styled.div`
             .down {
                 transform: rotateX(180deg);
             }
+        }
+        .risk_value2 {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
         }
         .risk_list {
             width: 100%;
