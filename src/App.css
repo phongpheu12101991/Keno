@@ -2,6 +2,7 @@
   border: none;
   outline: none;
   box-sizing: border-box;
+  user-select: none;
 }
 
 .App {
