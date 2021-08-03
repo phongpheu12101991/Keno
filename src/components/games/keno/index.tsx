@@ -145,7 +145,7 @@ const Keno = () => {
             case "ShowResult":
                 return { ...state, showResult: action.status, onBet: action.status };
             case "ShowAlert":
-                return { ...state, showAlert: action.status };
+                return { ...state, showAlert: action.status, autoBet: (action.status && state.autoBet) ? false : state.autoBet };
             case "ShowAuto":
                 return { ...state, showAuto: action.status };
             case "AutoBet":
@@ -461,6 +461,7 @@ const Keno = () => {
                         }
                     }
                     setTimeout(async () => {
+                        await changeBalance(balance + state.bet * state.payout[newR] - state.bet);
                         await dispatch({
                             type: "EndBet",
                             data: data,
@@ -469,7 +470,6 @@ const Keno = () => {
                             winAmount: state.bet * state.payout[newR] - state.bet,
                             hisBet: [...state.hisBet, state.payout[newR]]
                         })
-                        changeBalance(balance + state.bet * state.payout[newR] - state.bet);
                     }, 1000)
                 }
             }
@@ -530,7 +530,13 @@ const Keno = () => {
                                         displayType={state.autoBet ? "text" : "input"}
                                         thousandSeparator={true}
                                         onValueChange={(values) => {
-                                            dispatch({ type: "SetBet", data: values.floatValue < 10 ? 10 : values.floatValue > balance ? balance : values.floatValue })
+                                            dispatch({
+                                                type: "SetBet",
+                                                data: values.floatValue < 10 ? 10 :
+                                                    values.floatValue > balance && balance >= 10 ? balance :
+                                                        values.floatValue > balance && balance < 10 ? 10 :
+                                                            values.floatValue
+                                            })
                                         }}
                                         // isAllowed={({ floatValue }) => floatValue <= balance && floatValue >= 10}
                                         style={{ width: `${10 * (state.bet.toString().length)}px`, minWidth: "20px" }}
@@ -545,10 +551,13 @@ const Keno = () => {
                         </div>
                         <div className="gb_buttons">
                             <button disabled={state.autoBet} className={state.autoBet ? "gb_buttons_autobet" : "gb_buttons_bet"} onClick={doBet}>Bet</button>
-                            <button className={state.autoBet ? "gb_buttons_bet" : "gb_buttons_autobet"} onClick={() => {
-                                if (!state.autoBet) dispatch({ type: "ShowAuto", status: true })
-                                else dispatch({ type: "AutoBet", status: false, data: {} })
-                            }}>{state.autoBet ? "Stop Auto bet" : "Auto bet"}</button>
+                            <button
+                                disabled={state.onBet}
+                                className={state.autoBet ? "gb_buttons_bet" : "gb_buttons_autobet"}
+                                onClick={() => {
+                                    if (!state.autoBet) dispatch({ type: "ShowAuto", status: true })
+                                    else dispatch({ type: "AutoBet", status: false, data: {} })
+                                }}>{state.autoBet ? "Stop Auto bet" : "Auto bet"}</button>
                         </div>
                     </div>
                 </div>

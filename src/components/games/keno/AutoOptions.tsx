@@ -39,8 +39,8 @@ const AutoOptions = React.forwardRef(({ title }: ABProps, ref) => {
 
     const [state, dispatch] = useReducer(dataReducer, {
         changeAmount: 0,
-        change: true,
-        reset: false,
+        change: false,
+        reset: true,
         stop: false
     });
 
@@ -64,7 +64,7 @@ const AutoOptions = React.forwardRef(({ title }: ABProps, ref) => {
                     thousandSeparator={true}
                     displayType={state.change ? "input" : "text"}
                     onValueChange={({ floatValue }) => {
-                        dispatch({ type: "ChangeAmount", data: floatValue < -100 ? -100 : floatValue > 1000 ? 1000 : floatValue })
+                        dispatch({ type: "ChangeAmount", data: floatValue < -99 ? -99 : floatValue > 1000 ? 1000 : floatValue })
                     }}
                     // isAllowed={({ floatValue }) => floatValue <= 1000 && floatValue >= -100}
                     className={state.change ? "check" : ""}
