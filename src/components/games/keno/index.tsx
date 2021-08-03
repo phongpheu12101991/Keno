@@ -36,7 +36,8 @@ const Keno = () => {
         autoOptions: AutoOptions,
         autoNumber: number,
         autoStage: number,
-        profit: number
+        profit: number,
+        afterBet: boolean
     };
     type Data = Array<ObjectItem>;
     type Payout = Array<Number>;
@@ -94,6 +95,7 @@ const Keno = () => {
         | { type: 'SetAutoNumber', data: number }
         | { type: 'SetAutoStage', data: number }
         | { type: 'EndBet', data: Data, result: number | undefined, winRate: number, winAmount: number, hisBet: SBR }
+        | { type: 'PickAfterBet', data: Data }
     const dataReducer = (state: State, action: Action) => {
         switch (action.type) {
             case "Start":
@@ -141,7 +143,7 @@ const Keno = () => {
             case "HisBet":
                 return { ...state, hisBet: action.data };
             case "ShowResult":
-                return { ...state, showResult: action.status };
+                return { ...state, showResult: action.status, onBet: action.status };
             case "ShowAlert":
                 return { ...state, showAlert: action.status };
             case "ShowAuto":
@@ -180,7 +182,8 @@ const Keno = () => {
                             result: action.result,
                             winRate: action.winRate,
                             showResult: true,
-                            hisBet: action.hisBet
+                            hisBet: action.hisBet,
+                            afterBet: true
                         }
                     } else {
                         return {
@@ -196,7 +199,8 @@ const Keno = () => {
                                 : (action.winAmount < 0 && !state.autoOptions.onLoss.reset) ? state.autoOptions.onLoss.change ? (state.bet + state.bet * state.autoOptions.onLoss.changeAmount / 100) : state.bet
                                     : (action.winAmount >= 0 && state.autoOptions.onWin.reset) ? state.originBet
                                         : (action.winAmount >= 0 && !state.autoOptions.onWin.reset) ? state.autoOptions.onWin.change ? (state.bet + state.bet * state.autoOptions.onWin.changeAmount / 100) : state.bet
-                                            : state.bet
+                                            : state.bet,
+                            afterBet: true
                         };
                     }
                 } else {
@@ -208,9 +212,12 @@ const Keno = () => {
                         result: action.result,
                         winRate: action.winRate,
                         showResult: true,
-                        hisBet: action.hisBet
+                        hisBet: action.hisBet,
+                        afterBet: true
                     };
                 }
+            case "PickAfterBet":
+                return { ...state, data: action.data, count: state.count - 1, afterBet: false }
             default:
                 throw new Error();
         }
@@ -233,7 +240,8 @@ const Keno = () => {
         autoOptions: {},
         autoNumber: 0,
         autoStage: 0,
-        profit: 0
+        profit: 0,
+        afterBet: false
     });
 
     useEffect(() => {
@@ -296,17 +304,37 @@ const Keno = () => {
 
     const onPick = async (i: number) => {
         let data = [...state.data];
-        if (!state.onBet) {
+        if (!state.onBet && !state.autoBet) {
             if (state.count < 10) {
                 if (data[i - 1].status === 1) {
                     dispatch({ type: "Pick", id: i })
 
-                } else if (data[i - 1].status === 2) {
-                    dispatch({ type: "UnPick", id: i })
+                } else if (data[i - 1].status === 2 || data[i - 1].status === 5) {
+                    if (state.afterBet) {
+                        for (let x of data) {
+                            if (x.status === 5) { x.status = 2 }
+                            else if (x.status === 4 || x.status === 3) {
+                                x.status = 1
+                            }
+                        }
+                        data[i - 1].status = 1
+                        dispatch({ type: "PickAfterBet", data: data })
+                    } else
+                        dispatch({ type: "UnPick", id: i })
                 }
             } else {
-                if (data[i - 1].status === 2) {
-                    dispatch({ type: "UnPick", id: i })
+                if (data[i - 1].status === 2 || data[i - 1].status === 5) {
+                    if (state.afterBet) {
+                        for (let x of data) {
+                            if (x.status === 5) { x.status = 2 }
+                            else if (x.status === 4 || x.status === 3) {
+                                x.status = 1
+                            }
+                        }
+                        data[i - 1].status = 1
+                        dispatch({ type: "PickAfterBet", data: data })
+                    } else
+                        dispatch({ type: "UnPick", id: i })
                 }
             }
         }
@@ -420,14 +448,17 @@ const Keno = () => {
                     let data = [...state.data];
                     let newR: number = 0;
                     for (let x of rdList) {
-                        if (data[x - 1].status === 2) {
+                        if (data[x - 1].status === 2 || data[x - 1].status === 5) {
                             data[x - 1].status = 5;
                             newR += 1;
                         }
                         else { data[x - 1].status = 4; }
                     }
                     for (let y of data) {
-                        if (rdList.indexOf(y.id) === -1 && y.status !== 2) { y.status = 3; }
+                        if (rdList.indexOf(y.id) === -1) {
+                            if (y.status !== 2 && y.status !== 5) { y.status = 3; }
+                            else if (y.status === 5) { y.status = 2; }
+                        }
                     }
                     setTimeout(async () => {
                         await dispatch({
@@ -477,8 +508,8 @@ const Keno = () => {
                             <div className="gm_pick_functions">
                                 <RiskPicker />
                                 <div className="gm_pick_functions_button">
-                                    <Button isDisable={state.autoBet} title="Random picks" width={141} onClick={RandomPick} />
-                                    <Button isDisable={state.autoBet} title="Clear table" width={128} onClick={ClearPick} />
+                                    <Button isDisable={state.autoBet || state.onBet} title="Random picks" width={141} onClick={RandomPick} />
+                                    <Button isDisable={state.autoBet || state.onBet} title="Clear table" width={128} onClick={ClearPick} />
                                 </div>
                             </div>
                         </div>
@@ -487,8 +518,8 @@ const Keno = () => {
                     <div className="gb">
                         <div className="gb_amount">
                             <div className="gb_amount_minmax">
-                                <ButtonAmount disabled={state.autoBet} onClick={() => { changeBet("min") }}>Min</ButtonAmount>
-                                <ButtonAmount disabled={state.autoBet} onClick={() => { changeBet("max") }}>Max</ButtonAmount>
+                                <ButtonAmount disabled={state.autoBet || state.onBet} onClick={() => { changeBet("min") }}>Min</ButtonAmount>
+                                <ButtonAmount disabled={state.autoBet || state.onBet} onClick={() => { changeBet("max") }}>Max</ButtonAmount>
                             </div>
                             <div className="gb_amount_value">
                                 <div className="gb_amount_value_title">Bet amount</div>
@@ -508,8 +539,8 @@ const Keno = () => {
                                 </div>
                             </div>
                             <div className="gb_amount_math">
-                                <ButtonAmount disabled={state.autoBet} onClick={() => { changeBet("/2") }}>/2</ButtonAmount>
-                                <ButtonAmount disabled={state.autoBet} onClick={() => { changeBet("x2") }}>x2</ButtonAmount>
+                                <ButtonAmount disabled={state.autoBet || state.onBet} onClick={() => { changeBet("/2") }}>/2</ButtonAmount>
+                                <ButtonAmount disabled={state.autoBet || state.onBet} onClick={() => { changeBet("x2") }}>x2</ButtonAmount>
                             </div>
                         </div>
                         <div className="gb_buttons">

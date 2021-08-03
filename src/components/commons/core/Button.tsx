@@ -15,7 +15,7 @@ const Button = ({ title, width, isDisable, onClick }: BProps) => {
         disabled={isDisable}
         status={isDisable}
         wb={width}
-        onClick={() => { onClick(); console.log("?") }}
+        onClick={() => { onClick() }}
     >
         {title}
     </BT>
