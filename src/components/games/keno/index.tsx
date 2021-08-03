@@ -193,9 +193,9 @@ const Keno = () => {
                             showResult: true,
                             hisBet: action.hisBet,
                             bet: (action.winAmount < 0 && state.autoOptions.onLoss.reset) ? state.originBet
-                                : (action.winAmount < 0 && !state.autoOptions.onLoss.reset) ? state.autoOptions.onLoss.change ? state.bet * state.autoOptions.onLoss.changeAmount / 100 : state.bet
+                                : (action.winAmount < 0 && !state.autoOptions.onLoss.reset) ? state.autoOptions.onLoss.change ? (state.bet + state.bet * state.autoOptions.onLoss.changeAmount / 100) : state.bet
                                     : (action.winAmount >= 0 && state.autoOptions.onWin.reset) ? state.originBet
-                                        : (action.winAmount >= 0 && !state.autoOptions.onWin.reset) ? state.autoOptions.onWin.change ? state.bet * state.autoOptions.onWin.changeAmount / 100 : state.bet
+                                        : (action.winAmount >= 0 && !state.autoOptions.onWin.reset) ? state.autoOptions.onWin.change ? (state.bet + state.bet * state.autoOptions.onWin.changeAmount / 100) : state.bet
                                             : state.bet
                         };
                     }
@@ -220,7 +220,7 @@ const Keno = () => {
         payout: [],
         count: 0,
         disable: false,
-        bet: 0,
+        bet: 10,
         originBet: 0,
         onBet: false,
         result: undefined,
@@ -499,9 +499,9 @@ const Keno = () => {
                                         displayType={state.autoBet ? "text" : "input"}
                                         thousandSeparator={true}
                                         onValueChange={(values) => {
-                                            dispatch({ type: "SetBet", data: values.floatValue })
+                                            dispatch({ type: "SetBet", data: values.floatValue < 10 ? 10 : values.floatValue > balance ? balance : values.floatValue })
                                         }}
-                                        isAllowed={({ floatValue }) => floatValue <= 1000}
+                                        // isAllowed={({ floatValue }) => floatValue <= balance && floatValue >= 10}
                                         style={{ width: `${10 * (state.bet.toString().length)}px`, minWidth: "20px" }}
                                         allowEmptyFormatting
                                     />

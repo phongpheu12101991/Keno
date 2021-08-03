@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import styled from 'styled-components';
 import NumberFormat from 'react-number-format';
 import Check from "asserts/img/check.svg";
@@ -10,68 +10,78 @@ interface ABProps {
 }
 
 const AutoOptions = React.forwardRef(({ title }: ABProps, ref) => {
-    const [changeAmount, setCA] = useState<Number>(0);
-    const [change, setChange] = useState<boolean>(false);
-    const [reset, setReset] = useState<boolean>(false);
-    const [stop, setStop] = useState<boolean>(false);
+    type State = {
+        changeAmount: number,
+        change: boolean,
+        reset: boolean,
+        stop: boolean
+    }
+    type Action =
+        | { type: 'ChangeAmount', data: number }
+        | { type: 'Change' }
+        | { type: 'Reset' }
+        | { type: 'Stop' }
+
+    const dataReducer = (state: State, action: Action) => {
+        switch (action.type) {
+            case "ChangeAmount":
+                return { ...state, changeAmount: action.data };
+            case "Change":
+                return { ...state, change: true, reset: false, stop: false };
+            case "Reset":
+                return { ...state, change: false, reset: true, stop: false };
+            case "Stop":
+                return { ...state, change: false, reset: false, stop: true };
+            default:
+                throw new Error();
+        }
+    };
+
+    const [state, dispatch] = useReducer(dataReducer, {
+        changeAmount: 0,
+        change: true,
+        reset: false,
+        stop: false
+    });
+
 
     useEffect(() => {
-        ref.current = {
-            changeAmount: changeAmount,
-            change: change,
-            reset: reset,
-            stop: stop
-        }
+        ref.current = { ...state };
     })
 
     return <AR >
         <div className="ar_title">{title}</div>
         <div className="ar_options">
             <div className="ar_check">
-                <img src={change ? Check : NoCheck} alt="" onClick={() => {
-                    if (change) setChange(false)
-                    else {
-                        setChange(true);
-                        setReset(false);
-                        setStop(false);
-                    }
+                <img src={state.change ? Check : NoCheck} alt="" onClick={() => {
+                    if (!state.change) dispatch({ type: "Change" })
                 }} />
-                <span className={change ? "ar_check_text ar_check_text_active" : "ar_check_text"}>Thay đổi cược %</span>
+                <span className={state.change ? "ar_check_text ar_check_text_active" : "ar_check_text"}>Thay đổi cược %</span>
             </div>
             <div className="ar_change_input">
                 <NumberFormat
-                    value={changeAmount}
+                    value={state.changeAmount}
                     thousandSeparator={true}
-                    displayType={change ? "input" : "text"}
-                    onValueChange={(values) => {
-                        setCA(values.floatValue);
+                    displayType={state.change ? "input" : "text"}
+                    onValueChange={({ floatValue }) => {
+                        dispatch({ type: "ChangeAmount", data: floatValue < -100 ? -100 : floatValue > 1000 ? 1000 : floatValue })
                     }}
-                    isAllowed={({ floatValue }) => floatValue <= 1000 && floatValue >= 0}
-                    className={change ? "check" : ""}
+                    // isAllowed={({ floatValue }) => floatValue <= 1000 && floatValue >= -100}
+                    className={state.change ? "check" : ""}
                 />
                 <div className="dv">%</div>
             </div>
             <div className="ar_check">
-                <img src={reset ? Check : NoCheck} alt="" onClick={() => {
-                    if (reset) setReset(false)
-                    else {
-                        setReset(true);
-                        setChange(false);
-                        setStop(false);
-                    }
+                <img src={state.reset ? Check : NoCheck} alt="" onClick={() => {
+                    if (!state.reset) dispatch({ type: "Reset" })
                 }} />
-                <span className={reset ? "ar_check_text ar_check_text_active" : "ar_check_text"}>Đặt lại về mức đặt cược cơ bản</span>
+                <span className={state.reset ? "ar_check_text ar_check_text_active" : "ar_check_text"}>Đặt lại về mức đặt cược cơ bản</span>
             </div>
             <div className="ar_check">
-                <img src={stop ? Check : NoCheck} alt="" onClick={() => {
-                    if (stop) setStop(false)
-                    else {
-                        setStop(true);
-                        setReset(false);
-                        setChange(false);
-                    }
+                <img src={state.stop ? Check : NoCheck} alt="" onClick={() => {
+                    if (!state.stop) dispatch({ type: "Stop" })
                 }} />
-                <span className={stop ? "ar_check_text ar_check_text_active" : "ar_check_text"}>Dừng đặt cược tự động</span>
+                <span className={state.stop ? "ar_check_text ar_check_text_active" : "ar_check_text"}>Dừng đặt cược tự động</span>
             </div>
         </div>
     </AR>

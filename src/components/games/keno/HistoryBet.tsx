@@ -7,13 +7,14 @@ interface HBProps {
 
 const HistoryBet = ({ data }: HBProps) => {
 
-    return <HB>
+    return <HB shadow={data.length === 0}>
         {data.length === 0 ? <HB1>Game results will be displayed here.</HB1>
             : <HB2>
                 <div className="history_bet">
                     {data.map((item, index) => <div key={index} className={item > 0 ? "BRW" : "BRW BRL"}><span>{item.toFixed(2)}</span></div>)}
                 </div>
             </HB2>}
+        {data.length !== 0 ? <div className="shadow"></div> : null}
     </HB>
 
 
@@ -28,6 +29,7 @@ const HB = styled.div`
     overflow-x: auto;
     display: flex;
     flex-direction: row-reverse;
+    position: relative;
     &::-webkit-scrollbar {
         width: auto;
         height: 5px;
@@ -43,6 +45,13 @@ const HB = styled.div`
     }
     @media screen and (max-width: 1000px) {
         height: 49px;
+    }
+    .shadow {
+        position: absolute;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        background-image: linear-gradient(to right #262E3F00 0%, #262E3FB3 26%, #262E3FFC 59%, #262E3F 100%);
     }
 `
 

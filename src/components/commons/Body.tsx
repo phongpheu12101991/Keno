@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Route } from 'react-router-dom';
-import Keno from 'components/games/keno/Keno';
+import Keno from 'components/games/keno';
 
 interface BProps {
 
