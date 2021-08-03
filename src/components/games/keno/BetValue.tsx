@@ -125,6 +125,10 @@ const BetValue = React.forwardRef(({ title }: ABProps, ref) => {
                     setHTime(false);
                     setHold(false);
                 }}
+                onMouseOut={() => {
+                    setHTime(false);
+                    setHold(false);
+                }}
             >
                 <img src={M2} alt="" />
             </div>
